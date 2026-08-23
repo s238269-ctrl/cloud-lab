@@ -91,26 +91,34 @@ app.put('/api/students/:id', async (req, res) => {
     }
 });
 // Câu 39: API xóa sinh viên
+// API Xóa sinh viên theo ID (DELETE)
 app.delete('/api/students/:id', async (req, res) => {
-    try {
-        const student = await Student.findByIdAndDelete(req.params.id);
-
-        if (!student) {
-            return res.status(404).json({
-                message: "Không tìm thấy sinh viên"
-            });
-        }
-
-        res.json({
-            message: "Xóa sinh viên thành công",
-            student: student
-        });
-    } catch (error) {
-        res.status(400).json({
-            message: "Lỗi khi xóa sinh viên",
-            error: error.message
-        });
+  try {
+    const deletedStudent = await Student.findByIdAndDelete(req.params.id);
+    if (!deletedStudent) {
+      return res.status(404).json({ message: 'Không tìm thấy sinh viên để xóa!' });
     }
+    res.json({ message: 'Xóa sinh viên thành công!' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+// API Cập nhật sinh viên theo ID (PUT)
+app.put('/api/students/:id', async (req, res) => {
+  try {
+    const { studentId, name, email } = req.body;
+    const updatedStudent = await Student.findByIdAndUpdate(
+      req.params.id,
+      { studentId, name, email },
+      { new: true }
+    );
+    if (!updatedStudent) {
+      return res.status(404).json({ message: 'Không tìm thấy sinh viên!' });
+    }
+    res.json(updatedStudent);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 // Khởi chạy Express Server trên Port 5000
 app.listen(PORT, () => {

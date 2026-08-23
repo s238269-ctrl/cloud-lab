@@ -2,12 +2,12 @@ const appDiv = document.querySelector<HTMLDivElement>('#app')!;
 const API_URL = 'https://silver-space-palm-tree-xrvww7vw5pjp364rx-5000.app.github.dev/api/students';
 
 let studentsList: any[] = [];
+let editingStudentId: string | null = null;
 
-// 1. Hàm render giao diện ứng dụng
 function renderApp() {
   appDiv.innerHTML = `
     <div style="padding: 20px; font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto;">
-      <h2>Thêm Sinh Viên Mới</h2>
+      <h2>${editingStudentId ? 'Cập Nhật Sinh Viên' : 'Thêm Sinh Viên Mới'}</h2>
       <form id="studentForm" style="margin-bottom: 30px; padding: 15px; border: 1px solid #ccc; border-radius: 5px;">
         <div style="margin-bottom: 10px;">
           <label style="display: block; margin-bottom: 5px;">Mã Sinh Viên:</label>
@@ -24,9 +24,10 @@ function renderApp() {
           <input type="email" id="email" required style="width: 100%; padding: 8px; box-sizing: border-box;" />
         </div>
 
-        <button type="submit" style="padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">
-          Thêm Sinh Viên
+        <button type="submit" style="padding: 10px 20px; background-color: ${editingStudentId ? '#ffc107' : '#28a745'}; color: ${editingStudentId ? 'black' : 'white'}; border: none; border-radius: 3px; cursor: pointer;">
+          ${editingStudentId ? 'Cập Nhật' : 'Thêm Sinh Viên'}
         </button>
+        ${editingStudentId ? `<button type="button" id="cancelBtn" style="margin-left: 10px; padding: 10px 20px;">Hủy</button>` : ''}
       </form>
 
       <h2>Danh Sách Sinh Viên</h2>
@@ -37,6 +38,7 @@ function renderApp() {
             <th>Mã SV</th>
             <th>Họ và Tên</th>
             <th>Email</th>
+            <th>Hành động</th>
           </tr>
         </thead>
         <tbody>
@@ -46,6 +48,10 @@ function renderApp() {
               <td>${sv.studentId || ''}</td>
               <td>${sv.name || ''}</td>
               <td>${sv.email || ''}</td>
+              <td>
+                <button onclick="editStudent('${sv._id}', '${sv.studentId}', '${sv.name}', '${sv.email}')" style="padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px;">Sửa</button>
+                <button onclick="deleteStudent('${sv._id}')" style="padding: 5px 10px; background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">Xóa</button>
+              </td>
             </tr>
           `).join('')}
         </tbody>
@@ -53,12 +59,17 @@ function renderApp() {
     </div>
   `;
 
-  // Gán sự kiện submit cho form
   const form = document.getElementById('studentForm') as HTMLFormElement;
   form.addEventListener('submit', handleFormSubmit);
+
+  if (editingStudentId) {
+    document.getElementById('cancelBtn')?.addEventListener('click', () => {
+      editingStudentId = null;
+      renderApp();
+    });
+  }
 }
 
-// 2. Hàm lấy danh sách sinh viên từ Backend (GET)
 async function fetchStudents() {
   try {
     const response = await fetch(API_URL);
@@ -69,40 +80,62 @@ async function fetchStudents() {
   }
 }
 
-// 3. CÂU 49: Hàm gửi dữ liệu sinh viên mới lên Backend (POST)
+(window as any).editStudent = (id: string, studentId: string, name: string, email: string) => {
+  editingStudentId = id;
+  renderApp();
+  (document.getElementById('studentId') as HTMLInputElement).value = studentId;
+  (document.getElementById('name') as HTMLInputElement).value = name;
+  (document.getElementById('email') as HTMLInputElement).value = email;
+};
+
+// Hàm xử lý Xóa sinh viên
+(window as any).deleteStudent = async (id: string) => {
+  if (confirm('Bạn có chắc chắn muốn xóa sinh viên này không?')) {
+    try {
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        alert('Xóa thành công!');
+        fetchStudents();
+      } else {
+        alert('Xóa thất bại!');
+      }
+    } catch (error) {
+      console.error('Lỗi khi xóa:', error);
+    }
+  }
+};
+
 async function handleFormSubmit(e: Event) {
   e.preventDefault();
 
-  // Lấy giá trị từ các ô input
   const studentId = (document.getElementById('studentId') as HTMLInputElement).value;
   const name = (document.getElementById('name') as HTMLInputElement).value;
   const email = (document.getElementById('email') as HTMLInputElement).value;
 
-  const newStudent = { studentId, name, email };
+  const payload = { studentId, name, email };
 
   try {
-    // Gọi API POST /api/students
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(newStudent),
+    const url = editingStudentId ? `${API_URL}/${editingStudentId}` : API_URL;
+    const method = editingStudentId ? 'PUT' : 'POST';
+
+    const response = await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
 
     if (response.ok) {
-      alert('Thêm sinh viên thành công!');
-      // Tải lại danh sách sinh viên mới cập nhật từ MongoDB
+      alert(editingStudentId ? 'Cập nhật thành công!' : 'Thêm thành công!');
+      editingStudentId = null;
       fetchStudents();
     } else {
-      const errorData = await response.json();
-      alert(`Lỗi khi thêm: ${errorData.message}`);
+      alert('Có lỗi xảy ra!');
     }
   } catch (error) {
-    console.error('Lỗi gửi request:', error);
-    alert('Không thể kết nối đến máy chủ.');
+    console.error('Lỗi:', error);
   }
 }
 
-// Chạy ứng dụng
 fetchStudents();
