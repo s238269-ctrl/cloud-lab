@@ -1,13 +1,11 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Chuỗi kết nối chỉ định trực tiếp database /test
 const mongoURI = process.env.MONGO_URI || "mongodb+srv://cloud-lab:m7%4069yJFvQ_r7iG@nghi.crfcxmf.mongodb.net/test?retryWrites=true&w=majority";
 
 mongoose.connect(mongoURI)
@@ -22,6 +20,7 @@ const StudentSchema = new mongoose.Schema({
 
 const Student = mongoose.model('Student', StudentSchema);
 
+// Lấy danh sách
 app.get('/api/students', async (req, res) => {
   try {
     const students = await Student.find();
@@ -31,15 +30,39 @@ app.get('/api/students', async (req, res) => {
   }
 });
 
+// Thêm mới
 app.post('/api/students', async (req, res) => {
   try {
     const { maSV, hoTen, email } = req.body;
     const newStudent = new Student({ maSV, hoTen, email });
     await newStudent.save();
-    console.log("Thêm sinh viên thành công vào DB test:", newStudent);
     res.status(201).json(newStudent);
   } catch (err) {
-    console.error("Lỗi POST /api/students:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Cập nhật (Sửa)
+app.put('/api/students/:id', async (req, res) => {
+  try {
+    const { maSV, hoTen, email } = req.body;
+    const updatedStudent = await Student.findByIdAndUpdate(
+      req.params.id,
+      { maSV, hoTen, email },
+      { new: true }
+    );
+    res.json(updatedStudent);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Xóa
+app.delete('/api/students/:id', async (req, res) => {
+  try {
+    await Student.findByIdAndDelete(req.params.id);
+    res.json({ message: "Xóa sinh viên thành công" });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
