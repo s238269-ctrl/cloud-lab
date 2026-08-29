@@ -1,126 +1,48 @@
-require('dotenv').config(); // Nạp cấu hình PORT và MONGODB_URI từ file .env
 const express = require('express');
-const cors = require('cors');
-
 const mongoose = require('mongoose');
+const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-const MONGODB_URI = process.env.MONGODB_URI;
 app.use(cors());
-// Cấu hình để Express xử lý dữ liệu dạng JSON từ client gửi lên
 app.use(express.json());
 
-// Câu 33: Tiến hành kết nối Express Backend với MongoDB Atlas thông qua Mongoose
-mongoose.connect(MONGODB_URI)
-    .then(() => {
-        console.log("=========================================");
-        console.log("Kết nối MongoDB Atlas thành công!");
-        console.log("=========================================");
-    })
-    .catch(err => {
-        console.error("Lỗi kết nối cơ sở dữ liệu MongoDB Atlas:");
-        console.error(err);
-    });
-    const studentSchema = new mongoose.Schema({
-    studentId: String,
-    name: String,
-    email: String
-    });
+// Chuỗi kết nối chỉ định trực tiếp database /test
+const mongoURI = process.env.MONGO_URI || "mongodb+srv://cloud-lab:m7%4069yJFvQ_r7iG@nghi.crfcxmf.mongodb.net/test?retryWrites=true&w=majority";
 
-const Student = mongoose.model('Student', studentSchema);
+mongoose.connect(mongoURI)
+  .then(() => console.log(">>> Connected successfully to MongoDB Atlas (Database: test)"))
+  .catch(err => console.error(">>> MongoDB Connection Error:", err));
 
-// API kiểm tra (Đã tạo ở Câu 22)
-app.get('/api/hello', (req, res) => {
-    res.json({ 
-        status: "success", 
-        message: "Xác nhận: Backend đang hoạt động ổn định!" 
-    });
+const StudentSchema = new mongoose.Schema({
+  maSV: String,
+  hoTen: String,
+  email: String
 });
 
-// Câu 36: API lấy danh sách sinh viên
+const Student = mongoose.model('Student', StudentSchema);
+
 app.get('/api/students', async (req, res) => {
-    try {
-        const students = await Student.find();
-        res.json(students);
-    } catch (error) {
-        res.status(500).json({
-            message: "Lỗi khi lấy danh sách sinh viên",
-            error: error.message
-        });
-    }
+  try {
+    const students = await Student.find();
+    res.json(students);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
-// Câu 37: API thêm sinh viên
-app.post('/api/students', async (req, res) => {
-    try {
-        const student = await Student.create(req.body);
 
-        res.status(201).json({
-            message: "Thêm sinh viên thành công",
-            student: student
-        });
-    } catch (error) {
-        res.status(400).json({
-            message: "Lỗi khi thêm sinh viên",
-            error: error.message
-        });
-    }
-});
-// Câu 38: API cập nhật sinh viên
-app.put('/api/students/:id', async (req, res) => {
-    try {
-        const student = await Student.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true }
-        );
-        if (!student) {
-            return res.status(404).json({
-                message: "Không tìm thấy sinh viên"
-            });
-        }
-        res.json({
-            message: "Cập nhật sinh viên thành công",
-            student: student
-        });
-    } catch (error) {
-        res.status(400).json({
-            message: "Lỗi khi cập nhật sinh viên",
-            error: error.message
-        });
-    }
-});
-// Câu 39: API xóa sinh viên
-// API Xóa sinh viên theo ID (DELETE)
-app.delete('/api/students/:id', async (req, res) => {
+app.post('/api/students', async (req, res) => {
   try {
-    const deletedStudent = await Student.findByIdAndDelete(req.params.id);
-    if (!deletedStudent) {
-      return res.status(404).json({ message: 'Không tìm thấy sinh viên để xóa!' });
-    }
-    res.json({ message: 'Xóa sinh viên thành công!' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    const { maSV, hoTen, email } = req.body;
+    const newStudent = new Student({ maSV, hoTen, email });
+    await newStudent.save();
+    console.log("Thêm sinh viên thành công vào DB test:", newStudent);
+    res.status(201).json(newStudent);
+  } catch (err) {
+    console.error("Lỗi POST /api/students:", err.message);
+    res.status(500).json({ error: err.message });
   }
 });
-// API Cập nhật sinh viên theo ID (PUT)
-app.put('/api/students/:id', async (req, res) => {
-  try {
-    const { studentId, name, email } = req.body;
-    const updatedStudent = await Student.findByIdAndUpdate(
-      req.params.id,
-      { studentId, name, email },
-      { new: true }
-    );
-    if (!updatedStudent) {
-      return res.status(404).json({ message: 'Không tìm thấy sinh viên!' });
-    }
-    res.json(updatedStudent);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-// Khởi chạy Express Server trên Port 5000
-app.listen(PORT, () => {
-    console.log(`Express Server đang chạy trên port ${PORT}`);
-});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

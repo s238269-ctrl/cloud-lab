@@ -1,0 +1,22 @@
+services:
+  backend:
+    build: ./server
+    container_name: mern-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/mern-db?retryWrites=true&w0=majority
+    networks:
+      - mern-network
+
+  frontend:
+    build: ./client
+    container_name: mern-frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - mern-network
+
+networks:
+  mern-network:
+    external: true

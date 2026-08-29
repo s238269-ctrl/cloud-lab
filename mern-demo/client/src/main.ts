@@ -1,5 +1,5 @@
 const appDiv = document.querySelector<HTMLDivElement>('#app')!;
-const API_URL = 'https://silver-space-palm-tree-xrvww7vw5pjp364rx-5000.app.github.dev/api/students';
+const API_URL = 'http://localhost:5000/api/students';
 
 let studentsList: any[] = [];
 let editingStudentId: string | null = null;
