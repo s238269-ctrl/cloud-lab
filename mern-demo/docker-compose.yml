@@ -2,12 +2,9 @@ services:
   backend:
     build: ./server
     container_name: mern-backend
-    ports:
-      - "5000:5000"
+    network_mode: host
     env_file:
-      - ./server/.env
-    networks:
-      - mern-network
+      - ./.env
 
   frontend:
     build: ./client
