@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 
-const API_URL = 'https://friendly-umbrella-gx7qqj7q4p75c99xv-5000.app.github.dev/api/students';
+const getApiUrl = () => {
+  // Ưu tiên biến môi trường khi build image
+  const host = window.location.hostname;
+  // Codespaces: https://<name>-3000.app.github.dev -> https://<name>-5000.app.github.dev
+  // (cần mở port 5000 ở chế độ Public trong tab Ports)
+  if (host.includes('.app.github.dev')) {
+    return `${window.location.protocol}//${host.replace('-3000.', '-5000.')}/api/students`;
+  }
+  return 'http://localhost:5000/api/students';
+};
+
+const API_URL = getApiUrl();
 
 function App() {
   const [students, setStudents] = useState([]);
@@ -41,6 +52,13 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Map field frontend -> schema backend (Student.js: studentId, name, email)
+    const payload = {
+      studentId: form.maSV,
+      name: form.hoTen,
+      email: form.email
+    };
+
     try {
       let res;
 
@@ -51,7 +69,7 @@ function App() {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(form)
+          body: JSON.stringify(payload)
         });
       } else {
         // THÊM
@@ -60,7 +78,7 @@ function App() {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(form)
+          body: JSON.stringify(payload)
         });
       }
 
@@ -276,7 +294,7 @@ function App() {
           marginTop: '40px'
         }}
       >
-        Danh Sách Sinh Viên
+        Danh Sách Sinh Viên - B4
       </h2>
 
       <table

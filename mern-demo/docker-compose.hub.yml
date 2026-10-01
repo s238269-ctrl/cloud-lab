@@ -1,16 +1,13 @@
 services:
   backend:
-    image: s238269/mern-backend:1.0
+    image: s238269/mern-backend:1.1
     container_name: mern-backend-hub
-    ports:
-      - "5000:5000"
+    network_mode: host
     env_file:
-      - .env
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
+      - ./.env
+
   frontend:
-    image: s238269/mern-frontend:1.0
+    image: s238269/mern-frontend:2.0
     container_name: mern-frontend-hub
     ports:
       - "3000:3000"
