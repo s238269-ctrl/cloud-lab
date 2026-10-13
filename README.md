@@ -1,4 +1,4 @@
 # Cloud Computing Laboratory
-Student Name:
-Student ID:
-Class:
+Student Name: Lý Phương Nghi
+Student ID: 238269
+Class: DH23TIN10
